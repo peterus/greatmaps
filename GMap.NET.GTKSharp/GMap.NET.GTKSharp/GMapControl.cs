@@ -5,7 +5,7 @@ using GMap.NET;
 using GMap.NET.Internals;
 using GMap.NET.MapProviders;
 using GMap.NET.Projections;
-
+using System.Drawing.Drawing2D;
 
 namespace GMap.NET.GTKSharp
 {
@@ -14,13 +14,15 @@ namespace GMap.NET.GTKSharp
 	{
 		public GMapControl()
 		{
-			// Insert initialization code here.
-
-			Core.SystemType = "WindowsForms";
+			Core.SystemType = "GTKSharp";
 
 			GMapImageProxy.Enable();
 
 			Core.OnMapOpen().ProgressChanged += new ProgressChangedEventHandler(invalidatorEngage);
+
+			this.AddEvents(Convert.ToInt32(Gdk.EventMask.ButtonPressMask));
+			this.AddEvents(Convert.ToInt32(Gdk.EventMask.ButtonReleaseMask));
+			this.AddEvents(Convert.ToInt32(Gdk.EventMask.ButtonMotionMask));
 		}
 
 		void invalidatorEngage(object sender, ProgressChangedEventArgs e)
@@ -28,51 +30,57 @@ namespace GMap.NET.GTKSharp
 			InvalidateVisual();
 		}
 
-		/// <summary>
-		/// enque built-in thread safe invalidation
-		/// </summary>
-		public new void InvalidateVisual()
+		public void InvalidateVisual()
 		{
+			/*redraw();
 			if(Core.Refresh != null)
 			{
 				Core.Refresh.Set();
-			}
-			//redraw();
+			}*/
 		}
 
 		public void redraw()
 		{
-			Gdk.GC gc = new Gdk.GC(this.GdkWindow);
-			gc.RgbBgColor = new Gdk.Color(0, 0, 255);
-			gc.RgbFgColor = new Gdk.Color(255, 0, 0);
-			//this.GdkWindow.DrawRectangle(gc, true, 0, 0, 200, 200);
-
-			//Gdk.Pixbuf buf = new Gdk.Pixbuf("/home/pbuchegger/162.png");
-			//this.GdkWindow.DrawPixbuf(gc, buf, 0, 0, 200, 0, 255, 255, Gdk.RgbDither.Normal, 0, 0);
-
 			DrawGraphics(this.GdkWindow);
 		}
 
 		protected override bool OnButtonPressEvent(Gdk.EventButton ev)
 		{
+			Core.mouseDown = ApplyRotationInversion(Convert.ToInt32(ev.X), Convert.ToInt32(ev.Y));
+			redraw();
+			Core.BeginDrag(Core.mouseDown);
 			// Insert button press handling code here.
 			return base.OnButtonPressEvent(ev);
 		}
+
+		protected override bool OnButtonReleaseEvent(Gdk.EventButton evnt)
+		{
+			Core.EndDrag();
+			return base.OnButtonReleaseEvent(evnt);
+		}
+
+		protected override bool OnMotionNotifyEvent(Gdk.EventMotion evnt)
+		{
+			Core.mouseCurrent = ApplyRotationInversion(Convert.ToInt32(evnt.X), Convert.ToInt32(evnt.Y));
+			Core.Drag(Core.mouseCurrent);
+			redraw();
+			return base.OnMotionNotifyEvent(evnt);
+		}
+
 		protected override bool OnExposeEvent(Gdk.EventExpose ev)
 		{
 			base.OnExposeEvent(ev);
-			// Insert drawing code here.
-			DrawGraphics(this.GdkWindow);
+			redraw();
 			return true;
 		}
+
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
 		{
 			base.OnSizeAllocated(allocation);
-			// Insert layout code here.
 		}
+
 		protected override void OnSizeRequested(ref Gtk.Requisition requisition)
 		{
-			// Calculate desired size here.
 			requisition.Height = 700;
 			requisition.Width = 1000;
 			Core.OnMapSizeChanged(requisition.Width, requisition.Height);
@@ -133,7 +141,29 @@ namespace GMap.NET.GTKSharp
 				Core.MouseWheelZoomEnabled = value;
 			}
 		}
-			
+
+		readonly Matrix rotationMatrixInvert = new Matrix();
+
+		/// <summary>
+		/// apply transformation if in rotation mode
+		/// </summary>
+		GPoint ApplyRotationInversion(int x, int y)
+		{
+			GPoint ret = new GPoint(x, y);
+
+			//if(IsRotated)
+			{
+				System.Drawing.Point[] tt = new System.Drawing.Point[] { new System.Drawing.Point(x, y) };
+				rotationMatrixInvert.TransformPoints(tt);
+				var f = tt[0];
+
+				ret.X = f.X;
+				ret.Y = f.Y;
+			}
+
+			return ret;
+		}
+
 		/// <summary>
 		/// gets map manager
 		/// </summary>
