@@ -27,6 +27,7 @@ public partial class MainWindow
 		this.gmapcontrol2.MinZoom = 0;
 		this.gmapcontrol2.MouseWheelZoomEnabled = false;
 		this.gmapcontrol2.Zoom = 0;
+		this.gmapcontrol2.ShowTileGridLines = false;
 		this.hbox2.Add (this.gmapcontrol2);
 		global::Gtk.Box.BoxChild w1 = ((global::Gtk.Box.BoxChild)(this.hbox2 [this.gmapcontrol2]));
 		w1.Position = 0;

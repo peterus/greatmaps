@@ -311,6 +311,23 @@ namespace GMap.NET.GTKSharp
 			}
 		}
 
+		private bool showTileGridLines = false;
+
+		/// <summary>
+		/// shows tile gridlines
+		/// </summary>
+		[Category("GMap.NET")]
+		[Description("shows tile gridlines")]
+		public bool ShowTileGridLines {
+			get {
+				return showTileGridLines;
+			}
+			set {
+				showTileGridLines = value;
+				redraw();
+			}
+		}
+
 		/// <summary>
 		/// text on empty tiles
 		/// </summary>
@@ -383,7 +400,7 @@ namespace GMap.NET.GTKSharp
 
 			//}
 			DrawMap(g);
-			//OnPaintOverlays(g);
+			OnPaintOverlays(g);
 			//}
 			//}
 		}
@@ -426,26 +443,7 @@ namespace GMap.NET.GTKSharp
 											if(!found)
 												found = true;
 
-											if(!img.IsParent)
-											{
-												//if(!MapRenderTransform.HasValue && !IsRotated)
-												//{
-												g.DrawPixbuf(gc, img.Img, 0, 0, Convert.ToInt32(Core.tileRect.X + xoffset), Convert.ToInt32(Core.tileRect.Y + yoffset), Convert.ToInt32(Core.tileRect.Width), Convert.ToInt32(Core.tileRect.Height), Gdk.RgbDither.None, 0, 0);
-												/*} else
-												{
-													g.DrawImage(img.Img, new Rectangle((int)Core.tileRect.X, (int)Core.tileRect.Y, (int)Core.tileRect.Width, (int)Core.tileRect.Height), 0, 0, Core.tileRect.Width, Core.tileRect.Height, GraphicsUnit.Pixel, TileFlipXYAttributes);
-												}*/
-											} else
-											{
-												g.DrawPixbuf(gc, img.Img, 0, 0, Convert.ToInt32(Core.tileRect.X + xoffset), Convert.ToInt32(Core.tileRect.Y + yoffset), Convert.ToInt32(Core.tileRect.Width), Convert.ToInt32(Core.tileRect.Height), Gdk.RgbDither.None, 0, 0);
-
-												// TODO: move calculations to loader thread
-												/*System.Drawing.RectangleF srcRect = new System.Drawing.RectangleF((float)(img.Xoff * (img.Img.Width / img.Ix)), (float)(img.Yoff * (img.Img.Height / img.Ix)), (img.Img.Width / img.Ix), (img.Img.Height / img.Ix));
-												System.Drawing.Rectangle dst = new System.Drawing.Rectangle((int)Core.tileRect.X, (int)Core.tileRect.Y, (int)Core.tileRect.Width, (int)Core.tileRect.Height);
-
-												g.DrawImage(img.Img, dst, srcRect.X, srcRect.Y, srcRect.Width, srcRect.Height, GraphicsUnit.Pixel, TileFlipXYAttributes);
-											*/
-											}
+											g.DrawPixbuf(gc, img.Img, 0, 0, Convert.ToInt32(Core.tileRect.X + xoffset), Convert.ToInt32(Core.tileRect.Y + yoffset), Convert.ToInt32(Core.tileRect.Width), Convert.ToInt32(Core.tileRect.Height), Gdk.RgbDither.None, 0, 0);
 										}
 									}
 								}
@@ -512,23 +510,32 @@ namespace GMap.NET.GTKSharp
 										g.ShowText(EmptyTileText);
 */
 										//g.DrawRectangle(EmptyTileBorders, (int)Core.tileRect.X, (int)Core.tileRect.Y, (int)Core.tileRect.Width, (int)Core.tileRect.Height);
+										Cairo.Context cr = Gdk.CairoHelper.Create(g);
+										cr.SelectFontFace("Purisa", Cairo.FontSlant.Normal, Cairo.FontWeight.Bold);
+										cr.SetFontSize(13);
+										cr.MoveTo(Core.tileRect.X, Core.tileRect.Y);
+										cr.ShowText(EmptyTileText);
 									}
 								}
 							}
 
-							//g.DrawRectangle(EmptyTileBorders, (int)Core.tileRect.X, (int)Core.tileRect.Y, (int)Core.tileRect.Width, (int)Core.tileRect.Height);
-							g.DrawRectangle(gc, false, new Gdk.Rectangle(Convert.ToInt32(Core.tileRect.X + xoffset), Convert.ToInt32(Core.tileRect.Y + yoffset), Convert.ToInt32(Core.tileRect.Width), Convert.ToInt32(Core.tileRect.Height)));
-							//g.DrawGlyphs(gc, new Font(FontFamily.GenericSerif, (float)0.5), Core.tileRect.X, Core.tileRect.Y, (tilePoint.PosXY == Core.centerTileXYLocation ? "CENTER: " : "TILE: ") + tilePoint);
-
-							//g.DrawString((tilePoint.PosXY == Core.centerTileXYLocation ? "CENTER: " : "TILE: ") + tilePoint, MissingDataFont, Brushes.Red, new RectangleF(Core.tileRect.X, Core.tileRect.Y, Core.tileRect.Width, Core.tileRect.Height), CenterFormat);
-
-							/*if(ShowTileGridLines)
+							
+							if(ShowTileGridLines)
 							{
-								g.DrawRectangle(EmptyTileBorders, (int)Core.tileRect.X, (int)Core.tileRect.Y, (int)Core.tileRect.Width, (int)Core.tileRect.Height);
-								{
-									g.DrawString((tilePoint.PosXY == Core.centerTileXYLocation ? "CENTER: " : "TILE: ") + tilePoint, MissingDataFont, Brushes.Red, new RectangleF(Core.tileRect.X, Core.tileRect.Y, Core.tileRect.Width, Core.tileRect.Height), CenterFormat);
-								}
-							}*/
+								g.DrawRectangle(gc, false, new Gdk.Rectangle(Convert.ToInt32(Core.tileRect.X + xoffset), Convert.ToInt32(Core.tileRect.Y + yoffset), Convert.ToInt32(Core.tileRect.Width), Convert.ToInt32(Core.tileRect.Height)));
+								
+								Cairo.Context cr = Gdk.CairoHelper.Create(g);
+								cr.SelectFontFace("Purisa", Cairo.FontSlant.Normal, Cairo.FontWeight.Bold);
+								cr.SetFontSize(13);
+
+								string line1 = (tilePoint.PosXY == Core.centerTileXYLocation ? "CENTER: " : "TILE: ");
+								string line2 = "" + tilePoint.PosXY + ", px:";
+								string line3 = "" + tilePoint.PosPixel;
+
+								AddText(cr, line1, xoffset, yoffset, 1, 3);
+								AddText(cr, line2, xoffset, yoffset, 2, 3);
+								AddText(cr, line3, xoffset, yoffset, 3, 3);
+							}
 						}
 					}
 				}
@@ -539,6 +546,34 @@ namespace GMap.NET.GTKSharp
 			}
 		}
 
+		private void AddText(Cairo.Context cr, string text, double xoffset, double yoffset, Int32 line, Int32 fromlines)
+		{
+			Cairo.TextExtents ext = cr.TextExtents(text);
+
+			double x = 128.0 - (ext.Width / 2 + ext.XBearing);
+			double y = 128.0 - (ext.Height / 2 + ext.YBearing);
+
+			cr.MoveTo(Core.tileRect.X + xoffset + x, Core.tileRect.Y + yoffset + y / fromlines * line);
+			cr.ShowText(text);
+		}
+		
+		protected virtual void OnPaintOverlays(Gdk.Window g)
+		{
+			if(g != null)
+			{
+				Gdk.GC gc = new Gdk.GC(this.GdkWindow);
+				g.DrawLine(gc, Core.Width / 2 - 5, Core.Height / 2, Core.Width / 2 + 5, Core.Height / 2);
+				g.DrawLine(gc, Core.Width / 2, Core.Height / 2 - 5, Core.Width / 2, Core.Height / 2 + 5);
+			}
+		}
+
+	}
+
+	public enum HelperLineOptions
+	{
+		DontShow = 0,
+		ShowAlways = 1,
+		ShowOnModifierKey = 2
 	}
 }
 

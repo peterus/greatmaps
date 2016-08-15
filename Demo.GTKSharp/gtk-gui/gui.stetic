@@ -25,6 +25,7 @@
             <property name="MinZoom">0</property>
             <property name="MouseWheelZoomEnabled">False</property>
             <property name="Zoom">0</property>
+            <property name="ShowTileGridLines">False</property>
           </widget>
           <packing>
             <property name="Position">0</property>

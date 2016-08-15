@@ -15,6 +15,7 @@ public partial class MainWindow: Gtk.Window
 		gmapcontrol2.MinZoom = 0;
 		gmapcontrol2.MaxZoom = 24;
 		gmapcontrol2.Zoom = 18;
+		gmapcontrol2.ShowTileGridLines = true;
 	}
 	
 	protected void OnDeleteEvent(object sender, DeleteEventArgs a)
